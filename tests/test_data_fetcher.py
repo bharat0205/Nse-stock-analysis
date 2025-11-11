@@ -28,13 +28,14 @@ class TestNSEDataFetcher:
     @pytest.fixture
     def fetcher(self, temp_data_dir):
         """Create a fetcher instance with temp directory."""
-        fetcher_instance = NSEDataFetcher(data_dir=temp_data_dir)
+        fetcher_instance = NSEDataFetcher(stock_group="stocks", data_dir=temp_data_dir)
+        # Use only 2 stocks for testing
         fetcher_instance.stocks = ["RELIANCE.NS", "TCS.NS"]
         return fetcher_instance
 
     def test_data_folder_created(self, temp_data_dir):
         """Test that data folder is created."""
-        NSEDataFetcher(data_dir=temp_data_dir)
+        NSEDataFetcher(stock_group="stocks", data_dir=temp_data_dir)
         assert temp_data_dir.exists(), "Data folder should exist"
 
     def test_fetch_ohlcv_valid_stock(self, fetcher):
@@ -69,8 +70,9 @@ class TestNSEDataFetcher:
         success = fetcher.save_to_csv("RELIANCE.NS", df)
         assert success, "Save should succeed"
 
-        csv_path = temp_data_dir / "RELIANCE.csv"
-        assert csv_path.exists(), "CSV file should exist"
+        # Files are saved in temp_data_dir / "ohlcv" subfolder
+        csv_path = temp_data_dir / "ohlcv" / "RELIANCE.csv"
+        assert csv_path.exists(), f"CSV file should exist at {csv_path}"
 
         # Load and verify
         saved_df = pd.read_csv(csv_path)
@@ -108,7 +110,9 @@ class TestNSEDataFetcher:
         fetcher.save_to_csv("TEST.NS", df2)
 
         # Verify only 2 rows (not 3)
-        csv_path = temp_data_dir / "TEST.csv"
+        csv_path = temp_data_dir / "ohlcv" / "TEST.csv"
+        assert csv_path.exists(), f"CSV file should exist at {csv_path}"
+
         saved_df = pd.read_csv(csv_path)
         assert len(saved_df) == 2, "Should have 2 rows, not appended"
         assert saved_df.loc[0, "Close"] == 114, "First row should be from second write"
@@ -120,12 +124,15 @@ class TestNSEDataFetcher:
         assert isinstance(results, dict), "Should return dict"
         assert len(results) == 2, "Should have results for 2 stocks"
 
-        # Check files were created
-        assert (temp_data_dir / "RELIANCE.csv").exists(), "RELIANCE CSV should exist"
-        assert (temp_data_dir / "TCS.csv").exists(), "TCS CSV should exist"
+        # Check files were created in temp_data_dir / "ohlcv" folder
+        reliance_path = temp_data_dir / "ohlcv" / "RELIANCE.csv"
+        tcs_path = temp_data_dir / "ohlcv" / "TCS.csv"
+
+        assert reliance_path.exists(), f"RELIANCE CSV should exist at {reliance_path}"
+        assert tcs_path.exists(), f"TCS CSV should exist at {tcs_path}"
 
         # Verify CSV contents
-        reliance_df = pd.read_csv(temp_data_dir / "RELIANCE.csv")
+        reliance_df = pd.read_csv(reliance_path)
         assert len(reliance_df) > 0, "RELIANCE CSV should have data"
         required_cols = {"Date", "Open", "High", "Low", "Close", "Volume"}
         assert required_cols.issubset(
@@ -146,7 +153,9 @@ class TestNSEDataFetcher:
         )
         fetcher.save_to_csv("TEST.NS", df)
 
-        csv_path = temp_data_dir / "TEST.csv"
+        csv_path = temp_data_dir / "ohlcv" / "TEST.csv"
+        assert csv_path.exists(), f"CSV file should exist at {csv_path}"
+
         with open(csv_path) as f:
             header = f.readline().strip()
 
@@ -171,7 +180,9 @@ class TestNSEDataFetcher:
         fetcher.save_to_csv("TEST.NS", df)
 
         # Load and compare
-        csv_path = temp_data_dir / "TEST.csv"
+        csv_path = temp_data_dir / "ohlcv" / "TEST.csv"
+        assert csv_path.exists(), f"CSV file should exist at {csv_path}"
+
         loaded_df = pd.read_csv(csv_path)
 
         # Check specific values

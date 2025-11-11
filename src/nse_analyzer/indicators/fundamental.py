@@ -4,31 +4,37 @@ Fetch fundamental metrics from yfinance for NSE stocks.
 Located at: src/nse_analyzer/indicators/fundamental.py
 """
 
+import sys
 import pandas as pd
 import yfinance as yf
 from pathlib import Path
-from typing import Optional, Dict
+from typing import Dict
 import warnings
+
+sys.path.insert(0, str(Path(__file__).parent.parent.parent / "nse_analyzer"))
+from utils.config import ConfigManager
 
 warnings.filterwarnings("ignore", category=FutureWarning, module="yfinance")
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
-DATA_FOLDER = PROJECT_ROOT / "data"
+DATA_FOLDER = ConfigManager.get_data_dir()
 
 
 class FundamentalIndicators:
     """Fetch and calculate fundamental indicators for NSE stocks."""
 
-    def __init__(self):
-        self.stocks = [
-            "RELIANCE.NS",
-            "TCS.NS",
-            "HDFCBANK.NS",
-            "INFY.NS",
-            "KOTAKBANK.NS",
-        ]
+    def __init__(self, stock_group: str = "stocks", data_dir: Path | None = None):
+        """
+        Initialize with stock list from config.
 
-    def fetch_fundamental_data(self, ticker: str) -> Optional[Dict]:
+        Args:
+            stock_group: Key in stocks.yaml to load stocks from
+            data_dir: Optional custom data directory (for testing)
+        """
+        self.stocks = ConfigManager.load_stocks(stock_group)
+        self.stock_group = stock_group
+        self.data_dir = data_dir or ConfigManager.get_data_dir()
+
+    def fetch_fundamental_data(self, ticker: str) -> Dict | None:
         """
         Fetch fundamental data for a stock from yfinance.
 
@@ -69,12 +75,6 @@ class FundamentalIndicators:
                 "operating_cash_flow": self._get_value(info, "operatingCashflow"),
                 "free_cash_flow": self._get_value(info, "freeCashflow"),
                 # Financial Health
-                "debt_to_assets": (
-                    self._get_value(info, "totalDebt")
-                    / self._get_value(info, "totalAssets")
-                    if self._get_value(info, "totalAssets")
-                    else None
-                ),
                 "earnings_per_share": self._get_value(info, "epsTrailingTwelveMonths"),
                 "book_value_per_share": self._get_value(info, "bookValue"),
             }
@@ -99,9 +99,9 @@ class FundamentalIndicators:
         """
         results = []
 
-        print("\n" + "=" * 60)
-        print("FUNDAMENTAL INDICATORS FETCHER")
-        print("=" * 60 + "\n")
+        print(f"\n{'='*60}")
+        print(f"FUNDAMENTAL INDICATORS FETCHER - {self.stock_group.upper()}")
+        print(f"{'='*60}\n")
 
         for ticker in self.stocks:
             print(f"Fetching fundamentals for {ticker}...")
@@ -115,11 +115,13 @@ class FundamentalIndicators:
         if results:
             df = pd.DataFrame(results)
             return df
-        else:
-            return pd.DataFrame()
+        return pd.DataFrame()
 
     def save_fundamentals_csv(
-        self, df: pd.DataFrame, filename: str = "fundamentals.csv"
+        self,
+        df: pd.DataFrame,
+        filename: str = "fundamentals.csv",
+        subfolder: str = "fundamentals",
     ) -> bool:
         """
         Save fundamentals DataFrame to CSV.
@@ -127,13 +129,16 @@ class FundamentalIndicators:
         Args:
             df: DataFrame with fundamentals
             filename: Output filename
+            subfolder: Subfolder in data/ to save to
 
         Returns:
             True if successful, False otherwise
         """
         try:
-            csv_path = DATA_FOLDER / filename
-            DATA_FOLDER.mkdir(parents=True, exist_ok=True)
+            output_dir = self.data_dir / subfolder
+            output_dir.mkdir(parents=True, exist_ok=True)
+
+            csv_path = output_dir / filename
             df.to_csv(csv_path, index=False)
             print(f"\n✅ Saved fundamentals to {csv_path}")
             return True
@@ -143,7 +148,7 @@ class FundamentalIndicators:
 
     def get_fundamental_score(
         self, ticker: str, fundamentals: Dict = None
-    ) -> Optional[float]:
+    ) -> float | None:
         """
         Calculate a composite fundamental score (0-100).
 
@@ -162,25 +167,25 @@ class FundamentalIndicators:
 
         score = 0
         weights = {
-            "pe_ratio": 15,  # Lower PE is better
-            "pb_ratio": 10,  # Lower PB is better
-            "roe": 15,  # Higher ROE is better
-            "roce": 15,  # Higher ROCE is better
-            "debt_to_equity": 10,  # Lower D/E is better
-            "dividend_yield": 10,  # Higher yield is better
-            "current_ratio": 10,  # Higher liquidity is better
+            "pe_ratio": 15,
+            "pb_ratio": 10,
+            "roe": 15,
+            "roce": 15,
+            "debt_to_equity": 10,
+            "dividend_yield": 10,
+            "current_ratio": 10,
         }
 
         # PE Ratio (inverse scoring)
         pe = fundamentals.get("pe_ratio")
         if pe and pe > 0:
-            pe_score = min(100, (30 / pe) * 100)  # 30 is benchmark
+            pe_score = min(100, (30 / pe) * 100)
             score += (pe_score / 100) * weights["pe_ratio"]
 
         # ROE (direct scoring)
         roe = fundamentals.get("roe")
         if roe and roe > 0:
-            roe_score = min(100, roe * 100)  # 1.0 = 100%
+            roe_score = min(100, roe * 100)
             score += (roe_score / 100) * weights["roe"]
 
         # ROCE (direct scoring)
@@ -192,7 +197,7 @@ class FundamentalIndicators:
         # Debt to Equity (inverse scoring)
         de = fundamentals.get("debt_to_equity")
         if de and de > 0:
-            de_score = max(0, 100 - (de * 50))  # Lower is better
+            de_score = max(0, 100 - (de * 50))
             score += (de_score / 100) * weights["debt_to_equity"]
 
         # Dividend Yield (direct scoring)
@@ -204,15 +209,21 @@ class FundamentalIndicators:
         # Current Ratio (direct scoring)
         cr = fundamentals.get("current_ratio")
         if cr and cr > 0:
-            cr_score = min(100, cr * 50)  # 2.0 is target
+            cr_score = min(100, cr * 50)
             score += (cr_score / 100) * weights["current_ratio"]
 
         return min(100, score)
 
 
 if __name__ == "__main__":
+    # Example: Fetch for default stocks
     fetcher = FundamentalIndicators()
     df = fetcher.fetch_all_fundamentals()
     print("\nFundamental Metrics:")
     print(df.to_string())
     fetcher.save_fundamentals_csv(df)
+
+    # Example: Fetch for nifty50
+    # fetcher = FundamentalIndicators("nifty50")
+    # df = fetcher.fetch_all_fundamentals()
+    # fetcher.save_fundamentals_csv(df, "fundamentals_nifty50.csv")

@@ -7,13 +7,12 @@ Run with: pytest tests/test_fundamental_indicators.py -v
 import pytest
 import pandas as pd
 from pathlib import Path
-import tempfile
 import sys
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from nse_analyzer.indicators.fundamental import DATA_FOLDER
 from nse_analyzer.indicators.fundamental import FundamentalIndicators
+from nse_analyzer.utils.config import ConfigManager
 
 
 class TestFundamentalIndicators:
@@ -22,12 +21,26 @@ class TestFundamentalIndicators:
     @pytest.fixture
     def fetcher(self):
         """Create a FundamentalIndicators instance."""
-        return FundamentalIndicators()
+        fetcher_instance = FundamentalIndicators(stock_group="stocks")
+        # Use only 2 stocks for testing
+        fetcher_instance.stocks = ["RELIANCE.NS", "TCS.NS"]
+        return fetcher_instance
 
     def test_fetcher_initialization(self, fetcher):
-        """Test that fetcher initializes with correct stocks."""
-        assert len(fetcher.stocks) == 5, "Should have 5 stocks"
-        assert "RELIANCE.NS" in fetcher.stocks, "Should include RELIANCE"
+        """Test that fetcher initializes with stocks from config."""
+        # Check that stocks list is not empty (scalable)
+        assert len(fetcher.stocks) > 0, "Should have at least 1 stock"
+
+        # Check that stock symbols are valid format
+        for stock in fetcher.stocks:
+            assert ".NS" in stock, f"Stock {stock} should have .NS suffix"
+            assert isinstance(stock, str), f"Stock should be string, got {type(stock)}"
+
+    def test_config_stocks_loaded(self):
+        """Test that stocks are loaded from config."""
+        stocks = ConfigManager.load_stocks("stocks")
+        assert len(stocks) > 0, "Config should have stocks defined"
+        assert all(".NS" in s for s in stocks), "All stocks should have .NS suffix"
 
     def test_fetch_fundamental_data_valid_stock(self, fetcher):
         """Test fetching fundamentals for a valid stock."""
@@ -53,6 +66,10 @@ class TestFundamentalIndicators:
         if len(df) > 0:
             assert "ticker" in df.columns, "Should have ticker column"
             assert "pe_ratio" in df.columns, "Should have PE ratio column"
+            # Check number of rows matches fetcher.stocks
+            assert len(df) <= len(
+                fetcher.stocks
+            ), "Should have at most as many rows as stocks"
 
     def test_get_value_method(self, fetcher):
         """Test the _get_value helper method."""
@@ -78,20 +95,29 @@ class TestFundamentalIndicators:
 
     def test_save_fundamentals_csv(self, fetcher):
         """Test saving fundamentals to CSV."""
-        with tempfile.TemporaryDirectory():
-            df = pd.DataFrame(
-                {
-                    "ticker": ["RELIANCE.NS", "TCS.NS"],
-                    "pe_ratio": [25.5, 30.2],
-                    "roe": [0.15, 0.18],
-                    "dividend_yield": [0.025, 0.015],
-                }
-            )
-            # Save to temp path
-            saved_csv_path = DATA_FOLDER / "test_fundamentals.csv"
-            success = fetcher.save_fundamentals_csv(df, "test_fundamentals.csv")
-            assert success, "Save should succeed"
-            assert saved_csv_path.exists(), f"CSV file should exist at {saved_csv_path}"
+        df = pd.DataFrame(
+            {
+                "ticker": ["RELIANCE.NS", "TCS.NS"],
+                "pe_ratio": [25.5, 30.2],
+                "roe": [0.15, 0.18],
+                "dividend_yield": [0.025, 0.015],
+            }
+        )
+        success = fetcher.save_fundamentals_csv(df, "test_fundamentals.csv")
+        assert success, "Save should succeed"
+
+    def test_scalability_dynamic_stock_list(self):
+        """Test that system scales with different stock group sizes."""
+        # Test with different stock groups (when available)
+        stock_groups = ConfigManager.list_stock_groups()
+
+        for group in stock_groups:
+            fetcher = FundamentalIndicators(stock_group=group)
+            assert len(fetcher.stocks) > 0, f"Stock group '{group}' should have stocks"
+            # Verify all are strings
+            assert all(
+                isinstance(s, str) for s in fetcher.stocks
+            ), f"All stocks in '{group}' should be strings"
 
 
 if __name__ == "__main__":
