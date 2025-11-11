@@ -1,0 +1,30 @@
+# Stock configurations for NSE Stock Analysis
+# Easily add/remove/organize stocks by category
+
+stocks:
+  - RELIANCE.NS
+  - TCS.NS
+  - HDFCBANK.NS
+  - INFY.NS
+  - KOTAKBANK.NS
+
+nifty50:
+  - RELIANCE.NS
+  - TCS.NS
+  - HDFCBANK.NS
+  - INFY.NS
+  - KOTAKBANK.NS
+
+nifty100:
+  - RELIANCE.NS
+  - TCS.NS
+  - HDFCBANK.NS
+  - INFY.NS
+  - KOTAKBANK.NS
+  - WIPRO.NS
+  - MARUTI.NS
+
+custom:
+  # Add your custom stock lists here
+  - RELIANCE.NS
+  - INFY.NS
