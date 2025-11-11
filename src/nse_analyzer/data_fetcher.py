@@ -11,30 +11,25 @@ from pathlib import Path
 from datetime import datetime
 import warnings
 
-# Suppress FutureWarning from yfinance
+from .utils.config import ConfigManager
+
 warnings.filterwarnings("ignore", category=FutureWarning, module="yfinance")
-
-# Get project root (src/nse_analyzer/../..)
-PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
-DATA_FOLDER = PROJECT_ROOT / "data"
-
-# Ensure data folder exists
-DATA_FOLDER.mkdir(parents=True, exist_ok=True)
 
 
 class NSEDataFetcher:
     """Fetch and store OHLCV data for NSE stocks."""
 
-    def __init__(self, data_dir: Path = DATA_FOLDER):
-        self.data_dir = data_dir
-        self.data_dir.mkdir(parents=True, exist_ok=True)
-        self.stocks = [
-            "RELIANCE.NS",
-            "TCS.NS",
-            "HDFCBANK.NS",
-            "INFY.NS",
-            "KOTAKBANK.NS",
-        ]
+    def __init__(self, stock_group: str = "stocks", data_dir: Path | None = None):
+        """
+        Initialize fetcher with stock list from config.
+
+        Args:
+            stock_group: Key in stocks.yaml to load stocks from
+            data_dir: Optional custom data directory (for testing)
+        """
+        self.stocks = ConfigManager.load_stocks(stock_group)
+        self.stock_group = stock_group
+        self.data_dir = data_dir or ConfigManager.get_data_dir()
 
     def fetch_ohlcv(
         self, ticker: str, period: str = "2y", interval: str = "1d"
@@ -80,24 +75,27 @@ class NSEDataFetcher:
             print(f"❌ Error fetching {ticker}: {e}")
             return None
 
-    def save_to_csv(self, ticker: str, df: pd.DataFrame) -> bool:
+    def save_to_csv(self, ticker: str, df: pd.DataFrame, folder: str = "ohlcv") -> bool:
         """
         Save OHLCV data to CSV, overwriting previous file.
 
         Args:
             ticker: Stock symbol
             df: DataFrame with OHLCV data
+            folder: Subfolder in data/ to save to (default: 'ohlcv')
 
         Returns:
             True if successful, False otherwise
         """
         try:
+            # Use self.data_dir which was set in __init__
+            output_dir = self.data_dir / folder
+            output_dir.mkdir(parents=True, exist_ok=True)
+
             stock_name = ticker.replace(".NS", "")
-            csv_path = self.data_dir / f"{stock_name}.csv"
+            csv_path = output_dir / f"{stock_name}.csv"
 
-            # Save without index to avoid MultiIndex issues
             df.to_csv(csv_path, index=False)
-
             print(f"✅ Saved {csv_path} ({len(df)} rows)")
             return True
         except Exception as e:
@@ -118,8 +116,8 @@ class NSEDataFetcher:
         results = {}
         print(f"\n{'='*60}")
         print(
-            f"NSE DATA FETCHER - Started at "
-            f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+            f"NSE DATA FETCHER - {self.stock_group.upper()} - "
+            f"Started at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
         )
         print(f"{'='*60}\n")
 
@@ -143,6 +141,10 @@ class NSEDataFetcher:
 
 
 if __name__ == "__main__":
-    # Run when executed directly
+    # Example: Fetch for default stocks
     fetcher = NSEDataFetcher()
     fetcher.fetch_all(period="2y", interval="1d")
+
+    # Example: Fetch for nifty50
+    # fetcher = NSEDataFetcher("nifty50")
+    # fetcher.fetch_all()
