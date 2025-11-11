@@ -1,0 +1,59 @@
+indicators:
+  technical:
+    - name: Supertrend
+      weight: 8.09
+    - name: RSI
+      weight: 8.09
+    - name: BollingerBands
+      weight: 6.74
+    - name: MACD
+      weight: 6.07
+    - name: ATR
+      weight: 6.07
+    - name: SMA
+      weight: 5.39
+    - name: StochasticOscillator
+      weight: 4.72
+    - name: VWAP
+      weight: 4.04
+    - name: OBV
+      weight: 3.37
+    - name: EMA
+      weight: 3.37
+    - name: ROC
+      weight: 2.02
+    - name: MFI
+      weight: 2.02
+    # Total: 59.99
+  fundamental:
+    - name: EarningsGrowthEPSYoY
+      weight: 5.16
+    - name: RevenueGrowthYoY
+      weight: 4.52
+    - name: ReturnOnEquityROE
+      weight: 4.52
+    - name: ROCE
+      weight: 3.87
+    - name: PERatio
+      weight: 3.87
+    - name: DebtToEquityRatio
+      weight: 3.87
+    - name: OperatingCashFlowGrowthYoY
+      weight: 3.23
+    - name: PriceToBookRatio
+      weight: 2.58
+    - name: InterestCoverageRatio
+      weight: 2.58
+    - name: NetProfitMargin
+      weight: 2.58
+    - name: DividendYield
+      weight: 1.94
+    - name: DividendPayoutRatio
+      weight: 1.29
+    # Total: 40.01
+score:
+  tech_split: 60
+  fundamental_split: 40
+  buy_threshold: 70
+  neutral_zone: [40, 70]
+  sell_threshold: 40
