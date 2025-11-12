@@ -3,4 +3,4 @@ black
 flake8
 ruff
 seaborn
-git+https://github.com/twopirllc/pandas-ta.git
+pandas-ta
