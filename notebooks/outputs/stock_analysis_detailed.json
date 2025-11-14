@@ -1,0 +1,74 @@
+{
+  "timestamp": "2025-11-14T17:34:40.389995",
+  "ml_weights": {
+    "RSI": 0.25,
+    "MACD": 0.25,
+    "BB": 0.25,
+    "Supertrend": 0.25,
+    "FUNDAMENTAL": 0.0
+  },
+  "stocks_analysis": [
+    {
+      "Stock": "INFY",
+      "RSI": 67.9677638856784,
+      "MACD": 100.0,
+      "BB": 100,
+      "Supertrend": 70,
+      "Fundamental": 85,
+      "Composite": 84.4919409714196,
+      "Signal": "\ud83d\udfe2 STRONG BUY"
+    },
+    {
+      "Stock": "TCS",
+      "RSI": 62.93155288283607,
+      "MACD": 100.0,
+      "BB": 100,
+      "Supertrend": 70,
+      "Fundamental": 80,
+      "Composite": 83.23288822070901,
+      "Signal": "\ud83d\udfe2 STRONG BUY"
+    },
+    {
+      "Stock": "RELIANCE",
+      "RSI": 70.15945091938543,
+      "MACD": 99.99999999996547,
+      "BB": 87,
+      "Supertrend": 70,
+      "Fundamental": 65,
+      "Composite": 81.78986272983772,
+      "Signal": "\ud83d\udfe2 STRONG BUY"
+    },
+    {
+      "Stock": "HDFCBANK",
+      "RSI": 55.58955851695139,
+      "MACD": 4.391154106997419e-12,
+      "BB": 49,
+      "Supertrend": 70,
+      "Fundamental": 80,
+      "Composite": 43.647389629238944,
+      "Signal": "\ud83d\udd34 SELL"
+    },
+    {
+      "Stock": "KOTAKBANK",
+      "RSI": 43.16112193403294,
+      "MACD": 0.0,
+      "BB": 21,
+      "Supertrend": 30,
+      "Fundamental": 85,
+      "Composite": 23.540280483508234,
+      "Signal": "\ud83d\udd34 STRONG SELL"
+    }
+  ],
+  "recommendations": {
+    "buy": [
+      "INFY",
+      "TCS",
+      "RELIANCE"
+    ],
+    "hold": [],
+    "sell": [
+      "HDFCBANK",
+      "KOTAKBANK"
+    ]
+  }
+}
