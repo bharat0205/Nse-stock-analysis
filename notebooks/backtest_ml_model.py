@@ -327,7 +327,9 @@ if stocks_tested:
     )
 
 plt.tight_layout()
-plt.savefig(output_dir / "ml_backtest_results.png", dpi=300, bbox_inches="tight")
+plt.savefig(
+output_dir/"images"/"ml_backtest_results.png", dpi=300, bbox_inches="tight"
+)
 print("\n✅ ML results visualization saved to: ml_backtest_results.png")
 plt.show()
 

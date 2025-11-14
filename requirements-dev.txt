@@ -3,4 +3,4 @@ black
 flake8
 ruff
 seaborn
-pandas-ta
+pandas_ta

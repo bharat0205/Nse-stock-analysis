@@ -1,5 +1,5 @@
 {
-  "timestamp": "2025-11-12 16:55:58.224027",
+  "timestamp": "2025-11-12 20:27:03.175422",
   "method": "Random Forest Classifier (Time Series Split: 80-20)",
   "algorithm": "RandomForestClassifier(n_estimators=100, max_depth=10)",
   "target": "Binary classification - predict if price goes up or down in next period",
@@ -41,5 +41,5 @@
     "RSI": 0.3291,
     "Supertrend": 0.0158
   },
-  "notes": "Weights based on ML feature importance. Use these in scoring formula for Step 2."
+  "notes": "Weights based on ML feature importance.Use these in formula"
 }
